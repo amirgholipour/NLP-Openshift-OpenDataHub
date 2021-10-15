@@ -1,5 +1,4 @@
-
-from tensorflow.keras.layers import Bidirectional, Dense, Input, LSTM, Embedding, Dropout, Activation
+from tensorflow.keras.layers import Bidirectional, Dense, Input, LSTM, Embedding
 from tensorflow.keras.models import Sequential
 
 
