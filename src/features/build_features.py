@@ -106,7 +106,7 @@ class BuildFeatures():
         return self.data
 
     ## Do the label encoder on output and remove the output column from the feature vector
-    def ConvertInputLabelsToCat(self):
+    def ConvertInputLabelsToCat (self):
         '''
         convert input labels to categorical
         ----------
@@ -128,7 +128,7 @@ class BuildFeatures():
         print('Shape of train label tensor:', self.Train_labels.shape)
         print('Shape of test label tensor:', self.test_labels.shape)
 
-        return self.train_labels,self.test_labels
+        return self.data , self.labels
 
         
     ## function for doing one hot encoding    
@@ -157,12 +157,9 @@ class BuildFeatures():
         return self.final_set,self.ohe
 
     ## Doing ordinal encoding for the features which the order of value in the features are important
-    def GenerateEmbedingIndexCoefs(self,s3bucketname ="raw-data-saeed",embedding_glove_name ="glove.6B.50d.txt"):
+    def ordinal_encoding(self,feature_list):
         '''
-        ## CNN w/ Pre-trained word embeddings(GloVe)
-        We’ll use pre-trained embeddings such as Glove which provides word based vector representation trained on a large corpus.
-
-        It is trained on a dataset of one billion tokens (words) with a vocabulary of 400 thousand words. The glove has embedding vector sizes, including 50, 100, 200 and 300 dimensions.
+        Apply ordinal ecoding on the string data which there order is  important, such as Dependents, StreamingTV and etc.
         ----------
         
         Returns
@@ -174,41 +171,31 @@ class BuildFeatures():
             ordinal transformer module
         '''
 
-        # !wget http://nlp.stanford.edu/data/glove.6B.zip
-        f = client.get_object(s3bucketname, embedding_glove_name)
-        embeddings_index = {}
-        # f = open(os.path.join(GLOVE_DIR, 'glove.6B.50d.txt'))
-        # f = open( 'glove.6B.50d.txt')
-        for line in f:
-            # print(line.decode("utf-8") )
-            line = line.decode("utf-8")
-            # break
-            values = line.split()
-            word = values[0]
-            coefs = np.asarray(values[1:], dtype='float32')
-            embeddings_index[word] = coefs
-        f.close()
-
-        print('Found %s word vectors.' % len(embeddings_index))
-        return embeddings_index
-    def CreateEmbeddingMatrix(self,EMBEDDING_DIM=50,word_index):
+        # for column in names:
+        #     labelencoder(column)
+        # data_enc = self.data
+        self.enc = ce.ordinal.OrdinalEncoder(cols=feature_list)
+        
+        self.enc.fit(self.data)
+        self.final_set = self.enc.transform(data_enc)
+        # joblib.dump(enc, 'ordinalencoder.pkl')  
+        return self.final_set,self.enc
+    def encoding(self):
         '''
-        Now lets create the embedding matrix using the word indexer created from tokenizer.
-
+        Preform feature engineering on the categorical features
         ----------
         
         Returns
         -------
         Dataframe representation of the csv file
         '''
+        ordinal_feature_list = [ 'Partner', 'Dependents', 'PhoneService', 'StreamingTV', 'StreamingMovies', 'PaperlessBilling']
         
-        embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
-        for word, i in word_index.items():
-            embedding_vector = embeddings_index.get(word)
-            if embedding_vector is not None:
-                # words not found in embedding index will be all-zeros.
-                embedding_matrix[i] = embedding_vector
-        return embedding_matrix
+        self.final_set, self.enc = self.ordinal_encoding(ordinal_feature_list)
+        one_hot_feature_list = ['gender','MultipleLines', 'InternetService', 'Contract', 'PaymentMethod', 'OnlineSecurity', 'OnlineBackup',
+         'DeviceProtection', 'TechSupport']
+        self.final_set, self.ohe = self.onehot_encoding(one_hot_feature_list)
+        return self.final_set, self.enc, self.ohe
     def build_data(self):
         '''
         Preform feature engineering on the categorical features
