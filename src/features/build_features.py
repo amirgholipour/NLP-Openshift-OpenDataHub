@@ -37,6 +37,7 @@ class BuildFeatures():
         self.final_test_data = [] 
         self.train_labels = TRAIN_LABELS
         self.test_labels = TEST_LABELS
+        self.embedding_matrix = []
 #         self.final_set,self.labels = self.build_data()
     def DefineTokenizer(self):
         '''
@@ -103,7 +104,7 @@ class BuildFeatures():
         
         self.final_train_data = pad_sequences(self.train_data_seq, maxlen=MAX_SEQUENCE_LENGTH,padding='post')
         self.final_test_data = pad_sequences(self.test_data_seq, maxlen=MAX_SEQUENCE_LENGTH,padding='post')
-        return self.final_train_data,self.final_test_data
+        return self.final_train_data,self.final_test_data,MAX_SEQUENCE_LENGTH,word_index
 
     ## Do the label encoder on output and remove the output column from the feature vector
     def ConvertInputLabelsToCat (self):
@@ -131,6 +132,45 @@ class BuildFeatures():
         return self.train_labels , self.test_labels
 
         
+    
+
+    ## Doing ordinal encoding for the features which the order of value in the features are important
+    def LoadGloveWeights(self,client,S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt",word_index ):
+        '''
+        ## CNN w/ Pre-trained word embeddings(GloVe)
+        We’ll use pre-trained embeddings such as Glove which provides word based vector representation trained on a large corpus.
+
+        
+        '''
+        
+        # It is trained on a dataset of one billion tokens (words) with a vocabulary of 400 thousand words. The glove has embedding vector sizes, including 50, 100, 200 and 300 dimensions.
+
+        f = client.get_object(S3BucketName, GloveData)
+        embeddings_index = {}
+        # f = open(os.path.join(GLOVE_DIR, 'glove.6B.50d.txt'))
+        # f = open( 'glove.6B.50d.txt')
+        for line in f:
+            # print(line.decode("utf-8") )
+            line = line.decode("utf-8")
+            # break
+            values = line.split()
+            word = values[0]
+            coefs = np.asarray(values[1:], dtype='float32')
+            embeddings_index[word] = coefs
+        f.close()
+
+        print('Found %s word vectors.' % len(embeddings_index))
+        
+        ## Now lets create the embedding matrix using the word indexer created from tokenizer.
+        EMBEDDING_DIM = 50
+        embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
+        for word, i in word_index.items():
+            embedding_vector = embeddings_index.get(word)
+            if embedding_vector is not None:
+                # words not found in embedding index will be all-zeros.
+                embedding_matrix[i] = embedding_vector
+
+        return embedding_matrix
     ## function for doing one hot encoding    
     def PreProcessingTextData(self,feature_list):
         '''
@@ -148,73 +188,9 @@ class BuildFeatures():
         
 
         self.train_data_seq, self.test_data_seq = self.TokenizeInputData()
-        self.final_train_data,self.final_test_data = self.PaddingInputSequences()
+        self.final_train_data,self.final_test_data,MAX_SEQUENCE_LENGTH,word_index = self.PaddingInputSequences()
         self.train_labels , self.test_labels  = self.ConvertInputLabelsToCat()
+        self.embedding_matrix = self.LoadGloveWeights(client,S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt",word_index )
 
 #         final_set.head(5)
-        return self.final_set,self.ohe
-
-    ## Doing ordinal encoding for the features which the order of value in the features are important
-    def ordinal_encoding(self,client,S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt" ):
-        '''
-        ## CNN w/ Pre-trained word embeddings(GloVe)
-        We’ll use pre-trained embeddings such as Glove which provides word based vector representation trained on a large corpus.
-
-        It is trained on a dataset of one billion tokens (words) with a vocabulary of 400 thousand words. The glove has embedding vector sizes, including 50, 100, 200 and 300 dimensions.
-
-        '''
-
-        # !wget http://nlp.stanford.edu/data/glove.6B.zip
-        f = client.get_object(S3BucketName, GloveData)
-        embeddings_index = {}
-        # f = open(os.path.join(GLOVE_DIR, 'glove.6B.50d.txt'))
-        # f = open( 'glove.6B.50d.txt')
-        for line in f:
-            # print(line.decode("utf-8") )
-            line = line.decode("utf-8")
-            # break
-            values = line.split()
-            word = values[0]
-            coefs = np.asarray(values[1:], dtype='float32')
-            embeddings_index[word] = coefs
-        f.close()
-
-        print('Found %s word vectors.' % len(embeddings_index))
-        return embeddings_index
-    def encoding(self):
-        '''
-        Preform feature engineering on the categorical features
-        ----------
-        
-        Returns
-        -------
-        Dataframe representation of the csv file
-        '''
-        
-        return self.final_set, self.enc, self.ohe
-    def build_data(self):
-        '''
-        Preform feature engineering on the categorical features
-        ----------
-        
-        Returns
-        -------
-        self.final_set,self.labels, self.enc, self.ohe,self.encoding_flag
-        '''
-        self.read_data()
-        self.data = self.handel_missing_values()
-        self.data , self.labels = self.map_output()
-        object_data = data.select_dtypes(include=['object'])
-        object_data.columns 
-        if len(object_data.columns )>=1:
-            self.final_set, self.enc, self.ohe = self.encoding()
-            encoding_flag = True
-        else:
-            print('There is no need for encoding')
-            self.encoding_flag = False
-
-        self.final_set.head(5)
-        # return self.final_set,self.labels, self.enc, self.ohe,self.encoding_flag
-    def get_output(self):
-        self.build_data()
-        return self.final_set,self.labels, self.enc, self.ohe,self.encoding_flag
+        return self.final_train_data,self.final_test_data,self.train_labels , self.test_labels,self.embedding_matrix
