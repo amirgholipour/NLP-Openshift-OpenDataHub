@@ -20,13 +20,13 @@ class BuildFeatures():
     ohe:
         One hot  Encoder definition file
     '''
-    def __init__(self, TRAIN_DATA,TEST_DATA,TRAIN_LABELS,TEST_LABELS):
-        self.data =  []
-        self.final_set = []
-        self.labels = []
-        self.encoding_flag = False
-        self.ohe = []
-        self.enc = []
+    def __init__(self, TRAIN_DATA,TEST_DATA,TRAIN_LABELS,TEST_LABELS, CLIENT,S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt",EMBEDDING_DIM=50, WEIGHT_FLAG = False):
+#     def __init__(self, *args, **kwargs):
+        self.client =  CLIENT
+        self.S3BucketName = S3BucketName
+        self.GloveData = GloveData
+        self.EMBEDDING_DIM = EMBEDDING_DIM
+        self.word_index = []
         self.inputs = TRAIN_DATA.values
         self.tokenizer = Tokenizer(num_words=20000)
         self.train_data = TRAIN_DATA.values
@@ -38,6 +38,9 @@ class BuildFeatures():
         self.train_labels = TRAIN_LABELS
         self.test_labels = TEST_LABELS
         self.embedding_matrix = []
+        self.MAX_SEQUENCE_LENGTH = 0
+        self.weight_flag = WEIGHT_FLAG
+        
 #         self.final_set,self.labels = self.build_data()
     def DefineTokenizer(self):
         '''
@@ -52,7 +55,7 @@ class BuildFeatures():
         self.tokenizer.fit_on_texts(self.inputs)#total_complaints
 
         
-#         return self.tokenizer
+        return self.tokenizer
     ## read the data from the source file
     def TokenizeInputData(self):
         '''
@@ -64,11 +67,11 @@ class BuildFeatures():
         Dataframe representation of the csv file
         '''
 
-        self.DefineTokenizer()
+        self.tokenizer = self.DefineTokenizer()
 
         self.train_data_seq = self.tokenizer.texts_to_sequences(self.train_data)
         self.test_data_seq = self.tokenizer.texts_to_sequences(self.test_data)
-        return self.train_data_seq, self.test_data_seq
+        return self.train_data_seq, self.test_data_seq, self.tokenizer
     def GetInfo(self):
         '''
         GetRequired Info
@@ -78,15 +81,15 @@ class BuildFeatures():
         -------
         Dataframe representation of the csv file
         '''
-        self.DefineTokenizer()
+        self.tokenizer = self.DefineTokenizer()
         total_complaints = np.append(self.train_data,self.test_data)
-        MAX_SEQUENCE_LENGTH = max([len(c.split()) for c in total_complaints])
-        print('Maximum Sequence length is %s .' % len(MAX_SEQUENCE_LENGTH))
+        self.MAX_SEQUENCE_LENGTH = max([len(c.split()) for c in total_complaints])
+        print('Maximum Sequence length is %s .' % self.MAX_SEQUENCE_LENGTH)
         word_index = self.tokenizer.word_index# dictionary containing words and their index
         print('Found %s unique tokens.' % len(word_index))
 
         
-        return MAX_SEQUENCE_LENGTH,word_index
+        return self.MAX_SEQUENCE_LENGTH,self.word_index
     
     ## address the missing information
     def PaddingInputSequences(self):
@@ -98,13 +101,13 @@ class BuildFeatures():
         -------
         Dataframe with replaced missing value.
         '''
-        MAX_SEQUENCE_LENGTH,word_index = self.GetInfo()
-        self.train_data_seq, self.test_data_seq = self.TokenizeInputData()
+        self.MAX_SEQUENCE_LENGTH ,self.word_index = self.GetInfo()
+        self.train_data_seq, self.test_data_seq, self.tokenizer = self.TokenizeInputData()
         
         
-        self.final_train_data = pad_sequences(self.train_data_seq, maxlen=MAX_SEQUENCE_LENGTH,padding='post')
-        self.final_test_data = pad_sequences(self.test_data_seq, maxlen=MAX_SEQUENCE_LENGTH,padding='post')
-        return self.final_train_data,self.final_test_data,MAX_SEQUENCE_LENGTH,word_index
+        self.final_train_data = pad_sequences(self.train_data_seq, maxlen=self.MAX_SEQUENCE_LENGTH ,padding='post')
+        self.final_test_data = pad_sequences(self.test_data_seq, maxlen=self.MAX_SEQUENCE_LENGTH ,padding='post')
+        return self.final_train_data,self.final_test_data,self.MAX_SEQUENCE_LENGTH ,self.word_index,self.tokenizer
 
     ## Do the label encoder on output and remove the output column from the feature vector
     def ConvertInputLabelsToCat (self):
@@ -126,7 +129,7 @@ class BuildFeatures():
         self.train_labels = to_categorical(np.asarray(self.train_labels))
         self.test_labels = to_categorical(np.asarray(self.test_labels))
         print('Shape of train data tensor:', self.final_train_data.shape)
-        print('Shape of train label tensor:', self.Train_labels.shape)
+        print('Shape of train label tensor:', self.train_labels.shape)
         print('Shape of test label tensor:', self.test_labels.shape)
 
         return self.train_labels , self.test_labels
@@ -135,7 +138,7 @@ class BuildFeatures():
     
 
     ## Doing ordinal encoding for the features which the order of value in the features are important
-    def LoadGloveWeights(self,client,S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt",word_index ):
+    def LoadGloveWeights(self):
         '''
         ## CNN w/ Pre-trained word embeddings(GloVe)
         We’ll use pre-trained embeddings such as Glove which provides word based vector representation trained on a large corpus.
@@ -145,7 +148,7 @@ class BuildFeatures():
         
         # It is trained on a dataset of one billion tokens (words) with a vocabulary of 400 thousand words. The glove has embedding vector sizes, including 50, 100, 200 and 300 dimensions.
 
-        f = client.get_object(S3BucketName, GloveData)
+        f = self.client.get_object(self.S3BucketName, self.GloveData)
         embeddings_index = {}
         # f = open(os.path.join(GLOVE_DIR, 'glove.6B.50d.txt'))
         # f = open( 'glove.6B.50d.txt')
@@ -162,17 +165,16 @@ class BuildFeatures():
         print('Found %s word vectors.' % len(embeddings_index))
         
         ## Now lets create the embedding matrix using the word indexer created from tokenizer.
-        EMBEDDING_DIM = 50
-        embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
-        for word, i in word_index.items():
+        self.embedding_matrix = np.zeros((len(self.word_index) + 1, self.EMBEDDING_DIM))
+        for word, i in self.word_index.items():
             embedding_vector = embeddings_index.get(word)
             if embedding_vector is not None:
                 # words not found in embedding index will be all-zeros.
-                embedding_matrix[i] = embedding_vector
+                self.embedding_matrix[i] = embedding_vector
 
-        return embedding_matrix
+        return self.embedding_matrix
     ## function for doing one hot encoding    
-    def PreProcessingTextData(self,feature_list):
+    def PreProcessingTextData(self):
         '''
         Apply one hot ecoding on the string data which there order is not important, such as Gender, PaymentMethod and etc.
         ----------
@@ -187,10 +189,13 @@ class BuildFeatures():
         '''
         
 
-        self.train_data_seq, self.test_data_seq = self.TokenizeInputData()
-        self.final_train_data,self.final_test_data,MAX_SEQUENCE_LENGTH,word_index = self.PaddingInputSequences()
+        self.train_data_seq, self.test_data_seq, self.tokenizer = self.TokenizeInputData()
+        self.final_train_data,self.final_test_data,self.MAX_SEQUENCE_LENGTH ,self.word_index,self.tokenizer = self.PaddingInputSequences()
         self.train_labels , self.test_labels  = self.ConvertInputLabelsToCat()
-        self.embedding_matrix = self.LoadGloveWeights(client,S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt",word_index )
+        if self.weight_flag ==True:
+            self.embedding_matrix = self.LoadGloveWeights()
 
-#         final_set.head(5)
-        return self.final_train_data,self.final_test_data,self.train_labels , self.test_labels,self.embedding_matrix
+    #         final_set.head(5)
+            return self.final_train_data,self.final_test_data,self.train_labels, self.test_labels,self.tokenizer,self.embedding_matrix
+        else:
+            return self.final_train_data, self.final_test_data, self.train_labels, self.test_labels, self.word_index, self.tokenizer
