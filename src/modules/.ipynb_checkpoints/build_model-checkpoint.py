@@ -39,7 +39,7 @@ class BuildModel():
         #Bidirectional LSTM
         self.model = Sequential()
 
-        self.model.add(Embedding(len(word_index) + 1,
+        self.model.add(Embedding(len(self.word_index) + 1,
                                     self.embeding_dim,
                                     input_length=self.input_length ,
                                     trainable=True))
@@ -58,7 +58,7 @@ class BuildModel():
         '''
         #Bidirectional LSTM
         self.model = Sequential()
-        self.model.add(Embedding(len(word_index) + 1,
+        self.model.add(Embedding(len(self.word_index) + 1,
                                     self.embeding_dim,
                                     weights=self.weights,
                                     input_length=self.input_length ,
@@ -78,11 +78,9 @@ class BuildModel():
         -------
         
         '''
-        self.model.compile(loss=self.loss,
-              optimizer=self.optimizer,
-              metrics=self.metrics)
+        self.model.compile(loss=self.loss,optimizer=self.optimizer,metrics=self.metrics)
 #         return self.model
-    def BuildModel(self):
+    def SetupModel(self):
         '''
         Build the model
         ----------
@@ -97,4 +95,5 @@ class BuildModel():
                 
             self.DefineModelWithoutGLOVE()
         self.CompileModel()
+        self.model.summary()
         return self.model

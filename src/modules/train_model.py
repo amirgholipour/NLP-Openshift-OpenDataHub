@@ -1,9 +1,72 @@
+import os
+import tensorflow as tf
+import subprocess
+import joblib
+class MLflow():
+    '''
+    Define a class for MLflow configuration
+    ----------
+
+    Returns
+    -------
+    self.model:
+        Deep learning based Model  
+    
+    '''
+    def __init__(self, MLFLOW, HOST,EXPERIMENT_NAME):
+        self.mlflow = MLFLOW
+        self.host = HOST
+        self.experiment_name = EXPERIMENT_NAME
+        
+
+    def SetUp_Mlflow(self):
+        '''
+        Setup MLflow
+        ----------
+        
+        Returns
+        -------
+        
+        '''       
+
+        # Connect to local MLflow tracking server
+        self.mlflow.set_tracking_uri(self.host)
+
+        # Set the experiment name...
+        self.mlflow.set_experiment(self.experiment_name)
+
+        self.mlflow.tensorflow.autolog()
+        return self.mlflow
+
+    
+
+
+    def mlflow_grid_search(methodtoexecute, methodarguments):
+        with mlflow.start_run(tags= {
+            "mlflow.source.git.commit" : get_git_revision_hash() ,
+            "mlflow.user": get_git_user(),
+            "mlflow.source.git.repoURL": get_git_remote(),
+            "git_remote": get_git_remote(),
+            "mlflow.source.git.branch": get_git_branch(),
+            "mlflow.docker.image.name": os.getenv("JUPYTER_IMAGE", "LOCAL"),
+            "mlflow.source.type": "NOTEBOOK",
+    #         "mlflow.source.name": ipynbname.name()
+        }) as run:
+            methodtoexecute(**methodarguments)
+            record_details(mlflow)
+
+        return run
+    
+    
+    
+    
+
 import tensorflow as tf
 
 
     
 
-class Train_Model():
+class TrainModel():
     '''
     Build Lstm model for tensorflow
     ----------
@@ -30,6 +93,46 @@ class Train_Model():
         self.host = HOST
         self.experiment_name = EXPERIMENT_NAME
         self.history = []
+    def get_git_revision_hash(self):
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+
+    def get_git_revision_short_hash(self):
+        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
+
+    def get_git_remote(self):
+        return subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'])
+
+    def get_git_user(self):
+        return subprocess.check_output(['git', 'config', 'user.name'])
+
+    def get_git_branch(self):
+        return subprocess.check_output(['git', 'branch', '--show-current'])
+
+    def get_pip_freeze(self):
+        return subprocess.check_output(['pip', 'freeze']).splitlines()
+
+
+    def record_details(self):
+        """
+        This method is the anchor poijt and more activiteis will go in it
+        :param mlflow:
+        :return:
+        """
+        with open("pip_freeze.txt", "wb") as file:
+            for line in self.get_pip_freeze():
+                file.write(line)
+                file.write(bytes("\n", "UTF-8"))
+        self.mlflow.log_artifact("pip_freeze.txt")
+        file.close()
+        self.mlflow.log_artifact("model.h5", artifact_path="model")
+        self.mlflow.log_artifact("tokenizer.pkl", artifact_path="model")
+        self.mlflow.log_artifact("labelencoder.pkl", artifact_path="model")
+
+        os.remove("pip_freeze.txt")
+        os.remove("model.h5")
+        os.remove("tokenizer.pkl")
+        os.remove("labelencoder.pkl")
+
     def DefineCheckPoint(self):
         '''
         Define the model
@@ -73,14 +176,15 @@ class Train_Model():
         -------
         
         '''
-        
+        self.SavePKL()
+        self.DefineCheckPoint()
         self.mlflow = MLflow(self.mlflow, self.host,self.experiment_name).SetUp_Mlflow()
         with self.mlflow.start_run(tags= {
-                "mlflow.source.git.commit" : get_git_revision_hash() ,
-                "mlflow.user": get_git_user(),
-                "mlflow.source.git.repoURL": get_git_remote(),
-                "git_remote": get_git_remote(),
-                "mlflow.source.git.branch": get_git_branch(),
+                "mlflow.source.git.commit" : self.get_git_revision_hash() ,
+                "mlflow.user": self.get_git_user(),
+                "mlflow.source.git.repoURL": self.get_git_remote(),
+                "git_remote": self.get_git_remote(),
+                "mlflow.source.git.branch": self.get_git_branch(),
                 "mlflow.docker.image.name": os.getenv("JUPYTER_IMAGE", "LOCAL"),
                 "mlflow.source.type": "NOTEBOOK",
         #         "mlflow.source.name": ipynbname.name()
@@ -89,7 +193,7 @@ class Train_Model():
                          batch_size=self.batch_size,
                          epochs=self.epochs,
                          validation_data=(self.test_data, self.test_labels),callbacks=[self.model_checkpoint_callback])
-                record_details(self.mlflow)
+                self.record_details()
         return self.model,self.history
         # return self.final_set,self.labels, self.enc, self.ohe,self.encoding_flag
     

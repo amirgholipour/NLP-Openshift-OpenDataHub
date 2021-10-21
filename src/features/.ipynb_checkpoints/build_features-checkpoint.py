@@ -85,8 +85,8 @@ class BuildFeatures():
         total_complaints = np.append(self.train_data,self.test_data)
         self.MAX_SEQUENCE_LENGTH = max([len(c.split()) for c in total_complaints])
         print('Maximum Sequence length is %s .' % self.MAX_SEQUENCE_LENGTH)
-        word_index = self.tokenizer.word_index# dictionary containing words and their index
-        print('Found %s unique tokens.' % len(word_index))
+        self.word_index = self.tokenizer.word_index# dictionary containing words and their index
+        print('Found %s unique tokens.' % len(self.word_index))
 
         
         return self.MAX_SEQUENCE_LENGTH,self.word_index
