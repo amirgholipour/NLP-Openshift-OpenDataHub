@@ -196,6 +196,6 @@ class BuildFeatures():
             self.embedding_matrix = self.LoadGloveWeights()
 
     #         final_set.head(5)
-            return self.final_train_data,self.final_test_data,self.train_labels, self.test_labels,self.tokenizer,self.embedding_matrix
+            return self.final_train_data,self.final_test_data,self.train_labels, self.test_labels,self.tokenizer,self.MAX_SEQUENCE_LENGTH, self.embedding_matrix
         else:
-            return self.final_train_data, self.final_test_data, self.train_labels, self.test_labels, self.word_index, self.tokenizer
+            return self.final_train_data, self.final_test_data, self.train_labels, self.test_labels, self.word_index, self.tokenizer,self.MAX_SEQUENCE_LENGTH
