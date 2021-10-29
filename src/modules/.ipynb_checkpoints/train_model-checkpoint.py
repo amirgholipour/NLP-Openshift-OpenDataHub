@@ -176,7 +176,7 @@ class TrainModel():
         -------
         
         '''
-        self.SavePKL()
+        # self.SavePKL()
         self.DefineCheckPoint()
         self.mlflow = MLflow(self.mlflow, self.host,self.experiment_name).SetUp_Mlflow()
         with self.mlflow.start_run(tags= {

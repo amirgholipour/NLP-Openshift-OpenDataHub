@@ -3,7 +3,7 @@ import numpy as np
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import to_categorical
-
+from minio import Minio
 class BuildFeatures():
     '''
     Turn raw data into features for modeling
@@ -20,9 +20,13 @@ class BuildFeatures():
     ohe:
         One hot  Encoder definition file
     '''
-    def __init__(self, TRAIN_DATA,TEST_DATA,TRAIN_LABELS,TEST_LABELS, CLIENT,S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt",EMBEDDING_DIM=50, WEIGHT_FLAG = False):
+    def __init__(self, TRAIN_DATA,TEST_DATA,TRAIN_LABELS,TEST_LABELS, S3BucketName = "raw-data-saeed", GloveData="glove.6B.50d.txt",EMBEDDING_DIM=50, WEIGHT_FLAG = False,MLFLOW_S3_ENDPOINT_URL = "minio-ml-workshop:9000",AWS_ACCESS_KEY_ID='minio',AWS_SECRET_ACCESS_KEY = 'minio123',SECURE = False):
 #     def __init__(self, *args, **kwargs):
-        self.client =  CLIENT
+        self.client =  []
+        self.aws_access_key_id = AWS_ACCESS_KEY_ID
+        self.aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+        self.mlflow_s3_endpoint_url = MLFLOW_S3_ENDPOINT_URL
+        self.secure = SECURE
         self.S3BucketName = S3BucketName
         self.GloveData = GloveData
         self.EMBEDDING_DIM = EMBEDDING_DIM
@@ -91,6 +95,15 @@ class BuildFeatures():
         
         return self.MAX_SEQUENCE_LENGTH,self.word_index
     
+    
+    def GetS3Server(self):
+        
+        self.client = Minio(self.mlflow_s3_endpoint_url,
+                        access_key=self.aws_access_key_id,
+                        secret_key=self.aws_secret_access_key,
+                        secure=self.secure)
+
+        return self.client
     ## address the missing information
     def PaddingInputSequences(self):
         '''
@@ -147,7 +160,7 @@ class BuildFeatures():
         '''
         
         # It is trained on a dataset of one billion tokens (words) with a vocabulary of 400 thousand words. The glove has embedding vector sizes, including 50, 100, 200 and 300 dimensions.
-
+        self.client = self.GetS3Server()
         f = self.client.get_object(self.S3BucketName, self.GloveData)
         embeddings_index = {}
         # f = open(os.path.join(GLOVE_DIR, 'glove.6B.50d.txt'))
