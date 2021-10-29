@@ -2,6 +2,7 @@ import os
 import tensorflow as tf
 import subprocess
 import joblib
+import mlflow
 class MLflow():
     '''
     Define a class for MLflow configuration
@@ -78,11 +79,11 @@ class TrainModel():
     
     '''
     
-    def __init__(self, MODEL, MLFLOW, TOKENIZER, ENC,TRAIN_DATA, TRAIN_LABELS,TEST_DATA, TEST_LABELS,HOST, EXPERIMENT_NAME, BATCH_SIZE=64,EPOCHS=10):
+    def __init__(self, MODEL, TOKENIZER, ENC,TRAIN_DATA, TRAIN_LABELS,TEST_DATA, TEST_LABELS,HOST, EXPERIMENT_NAME, BATCH_SIZE=64,EPOCHS=10):
         self.model_checkpoint_callback = []
         self.enc = ENC
         self.tokenizer = TOKENIZER
-        self.mlflow = MLFLOW
+        self.mlflow = mlflow
         self.model = MODEL
         self.train_data = TRAIN_DATA
         self.train_labels = TRAIN_LABELS

@@ -32,8 +32,8 @@
             "ui_data": {
               "label": "data-loading.ipynb",
               "image": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20viewBox%3D%220%200%2022%2022%22%3E%0A%20%20%3Cg%20class%3D%22jp-icon-warn0%20jp-icon-selectable%22%20fill%3D%22%23EF6C00%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M18.7%203.3v15.4H3.3V3.3h15.4m1.5-1.5H1.8v18.3h18.3l.1-18.3z%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M16.5%2016.5l-5.4-4.3-5.6%204.3v-11h11z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A",
-              "x_pos": 51,
-              "y_pos": 29,
+              "x_pos": 50,
+              "y_pos": 50,
               "description": "Run notebook file"
             }
           },
@@ -85,8 +85,8 @@
             "ui_data": {
               "label": "data-preprocessing.ipynb",
               "image": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20viewBox%3D%220%200%2022%2022%22%3E%0A%20%20%3Cg%20class%3D%22jp-icon-warn0%20jp-icon-selectable%22%20fill%3D%22%23EF6C00%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M18.7%203.3v15.4H3.3V3.3h15.4m1.5-1.5H1.8v18.3h18.3l.1-18.3z%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M16.5%2016.5l-5.4-4.3-5.6%204.3v-11h11z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A",
-              "x_pos": 199,
-              "y_pos": 187,
+              "x_pos": 50,
+              "y_pos": 165,
               "description": "Run notebook file"
             }
           },
@@ -134,9 +134,7 @@
             "component_parameters": {
               "filename": "design-model.ipynb",
               "runtime_image": "quay.io/ml-aml-workshop/airflow-python-runner:0.0.8",
-              "outputs": [
-                "model.h5"
-              ],
+              "outputs": [],
               "env_vars": [],
               "dependencies": [],
               "include_subdirectories": false
@@ -145,8 +143,8 @@
             "ui_data": {
               "label": "design-model.ipynb",
               "image": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20viewBox%3D%220%200%2022%2022%22%3E%0A%20%20%3Cg%20class%3D%22jp-icon-warn0%20jp-icon-selectable%22%20fill%3D%22%23EF6C00%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M18.7%203.3v15.4H3.3V3.3h15.4m1.5-1.5H1.8v18.3h18.3l.1-18.3z%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M16.5%2016.5l-5.4-4.3-5.6%204.3v-11h11z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A",
-              "x_pos": 476,
-              "y_pos": 203,
+              "x_pos": 50,
+              "y_pos": 280,
               "description": "Run notebook file"
             }
           },
@@ -203,14 +201,16 @@
                 "AWS_BUCKET_NAME="
               ],
               "dependencies": [],
-              "include_subdirectories": false
+              "include_subdirectories": false,
+              "cpu": 4,
+              "memory": 6
             },
             "label": "",
             "ui_data": {
               "label": "model-training.ipynb",
               "image": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20viewBox%3D%220%200%2022%2022%22%3E%0A%20%20%3Cg%20class%3D%22jp-icon-warn0%20jp-icon-selectable%22%20fill%3D%22%23EF6C00%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M18.7%203.3v15.4H3.3V3.3h15.4m1.5-1.5H1.8v18.3h18.3l.1-18.3z%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M16.5%2016.5l-5.4-4.3-5.6%204.3v-11h11z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A",
-              "x_pos": 664,
-              "y_pos": 483,
+              "x_pos": 50,
+              "y_pos": 395,
               "description": "Run notebook file"
             }
           },
@@ -230,11 +230,6 @@
                 {
                   "id": "0919d52e-f8c0-4be7-abd3-8c57d891783c",
                   "node_id_ref": "bf2d9367-971a-453f-9cf5-c5a656c69963",
-                  "port_id_ref": "outPort"
-                },
-                {
-                  "id": "cdc20411-58d0-413f-b6c8-ea28debb7134",
-                  "node_id_ref": "37917bbc-18cf-4212-8601-028b99517351",
                   "port_id_ref": "outPort"
                 }
               ]
