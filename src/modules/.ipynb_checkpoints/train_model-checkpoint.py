@@ -129,10 +129,10 @@ class TrainModel():
         self.mlflow.log_artifact("tokenizer.pkl", artifact_path="model")
         self.mlflow.log_artifact("labelencoder.pkl", artifact_path="model")
 
-        os.remove("pip_freeze.txt")
-        os.remove("model.h5")
-        os.remove("tokenizer.pkl")
-        os.remove("labelencoder.pkl")
+        # os.remove("pip_freeze.txt")
+        # os.remove("model.h5")
+        # os.remove("tokenizer.pkl")
+        # os.remove("labelencoder.pkl")
 
     def DefineCheckPoint(self):
         '''

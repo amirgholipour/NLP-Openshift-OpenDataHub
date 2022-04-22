@@ -5,6 +5,8 @@ from minio import Minio
 import openshift as oc
 from jinja2 import Template
 import tensorflow as tf
+import time
+
 os.environ['MLFLOW_S3_ENDPOINT_URL']='http://minio-ml-workshop:9000'
 os.environ['AWS_ACCESS_KEY_ID']='minio'
 os.environ['AWS_SECRET_ACCESS_KEY']='minio123'
@@ -12,7 +14,7 @@ os.environ['AWS_REGION']='us-east-1'
 os.environ['AWS_BUCKET_NAME']='mlflow'
 # os.environ['MODEL_NAME'] = 'lstmv7'
 # os.environ['MODEL_VERSION'] = '1'
-# os.environ['OPENSHIFT_CLIENT_PYTHON_DEFAULT_OC_PATH'] = '/tmp/oc'
+os.environ['OPENSHIFT_CLIENT_PYTHON_DEFAULT_OC_PATH'] = '/tmp/oc'
 
 HOST = "http://mlflow:5500"
 
@@ -124,13 +126,16 @@ with oc.api_server(server):
             print(route_count)
             if route_count == 0:
                 service_name = "model-" + run_id + "-" + model_name
-                service_count = oc.selector(f"service/{service_name}").count_existing()
-                if service_count > 0:
-                    service = oc.selector(f"service/{service_name}").object()
-                    print(service.name())
-                    oc.oc_action(oc.cur_context(), "expose", cmd_args=["service", service.name(), "--name", service.name()])
-                else:
-                    print(f"Service name does not exist {service_name}")
+                while True:
+                    service_count = oc.selector(f"service/{service_name}").count_existing()
+                    if service_count > 0:
+                        service = oc.selector(f"service/{service_name}").object()
+                        print(service.name())
+                        oc.oc_action(oc.cur_context(), "expose", cmd_args=["service", service.name(), "--name", service.name()])
+                        break
+                    else:
+                        print(f"Service name does not exist {service_name}")
+                        time.sleep(10)
             else:
                 print(f"Route already exists {service_name}")
 
