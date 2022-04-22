@@ -5,6 +5,8 @@ import json
 import traceback
 import sys
 import os
+
+
 class Predictor(object):
     
     def __init__(self):
@@ -47,7 +49,13 @@ class Predictor(object):
         
         print(self.labelencoder.inverse_transform(result))
         print ('step6......')
-        return json.dumps(result.numpy(), cls=JsonSerializer)
+        
+
+        json_results = {"Predicted Class": str(self.labelencoder.inverse_transform(result)),"Predicted Class Label": json.dumps(result.numpy(), cls=JsonSerializer)}
+        
+        
+        return json_results
+        # return json.dumps(result.numpy(), cls=JsonSerializer)
 
 class JsonSerializer(json.JSONEncoder):
     def default(self, obj):
