@@ -1,7 +1,7 @@
 MLOps_Project
 ==============================
 
-In this project, We aim to show how you can use the OpenShift for MLOps operations.
+In this project, We aim to show how you can use the OpenShift to develop and deploy NLP classification app.
 
 Project Organization
 ------------
